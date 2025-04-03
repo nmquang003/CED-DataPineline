@@ -193,7 +193,8 @@ class MAVENPreprocess(object):
                 _spans = [h[0] + 1, h[1] + 1, t[0] + 1, t[1] + 1]
         elif isinstance(token_ids, List):
             if is_tokenized:
-                tokens = tokenizer(token_ids, is_pretokenized=True, return_offsets_mapping=True)
+                # tokens = tokenizer(token_ids, is_pretokenized=True, return_offsets_mapping=True)
+                tokens = tokenizer(token_ids, return_offsets_mapping=True)
                 if isinstance(token_ids[0], str):
                     _token_ids = tokens["input_ids"]
                     offsets = tokens["offset_mapping"]
