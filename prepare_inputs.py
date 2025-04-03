@@ -6,6 +6,31 @@ from tqdm import tqdm
 import torch
 import numpy as np
 import transformers
+import ctypes
+import gdown
+
+# Định nghĩa danh sách thư mục và link (link là Google Drive folder)
+mp = {
+    "MAVEN": "https://drive.google.com/drive/folders/19Q0lqJE6A98OLnRqQVhbX3e6rG4BVGn8",
+}
+
+root_folder = "."
+
+# Tạo thư mục gốc nếu chưa tồn tại
+os.makedirs(root_folder, exist_ok=True)
+
+# Duyệt qua từng thư mục và tải về toàn bộ nội dung
+for folder_name, drive_link in mp.items():
+    if os.path.exists(os.path.join(root_folder, folder_name)):
+        print(f"Thu muc {folder_name} da ton tai, bo qua.")
+        continue
+    target_folder = os.path.join(root_folder, folder_name)
+    os.makedirs(target_folder, exist_ok=True)
+    
+    # Tải toàn bộ thư mục từ Google Drive
+    print(f"Dang tai thu muc {folder_name} về {target_folder}")
+    gdown.download_folder(drive_link, output=target_folder, quiet=False)
+    print(f"Da tai xong {folder_name} về {target_folder}")
 
 class Instance(object):
     '''
