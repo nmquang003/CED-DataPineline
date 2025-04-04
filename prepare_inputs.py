@@ -236,10 +236,11 @@ class MAVENPreprocess(object):
                 #     _spans = [token2piece[hs][0], token2piece[he][1], token2piece[ts][0], token2piece[te][1]]
                 
                 # Token hóa danh sách các từ gốc (token_ids), đồng thời yêu cầu trả về offset mapping
-                tokens = tokenizer(token_ids, return_offsets_mapping=True)
+                tokens = tokenizer(token_ids, is_split_into_words=True, return_offsets_mapping=True)
 
                 # Nếu token_ids là danh sách các từ gốc, ví dụ: ["This", "is", "a", "test"]
                 if isinstance(token_ids[0], str):
+                    print("token_ids", token_ids)
                     # _token_ids là danh sách ID sau khi tokenizer chuyển từ các từ sang subword tokens
                     # Ví dụ: [101, 2023, 2003, 1037, 3231, 102]
                     _token_ids = tokens["input_ids"]  # List[int], chiều dài thường > len(token_ids)
@@ -256,6 +257,7 @@ class MAVENPreprocess(object):
                     piece_idx = 1
 
                     # Bỏ [CLS] và [SEP] → offsets[1:-1]
+
                     for x, y in offsets[1:-1]:
                         # Nếu subword bắt đầu từ đầu một từ (start_char == 0)
                         if x == 0:
