@@ -123,10 +123,11 @@ class MAVENPreprocess(object):
     def _file(self, file_path):
         instances = []
         with open(file_path, "rt") as fp:
-            for document_line in tqdm(fp):
+            for document_line in tqdm(fp, desc=f"Processing {file_path}", total=os.path.getsize(file_path), unit="B"):
+                document_line = document_line.strip()
                 document = json.loads(document_line)
                 instances.extend(self._document(document))
-        self.clear_sentences()
+        # self.clear_sentences()
         return instances
 
     def _document(self, document):
@@ -177,7 +178,8 @@ class MAVENPreprocess(object):
             if len(piece_ids) > 512:
                 continue
             if sentence_id not in self.collected:
-                self.add_sentence(sentence_id, piece_ids)
+                # self.add_sentence(sentence_id, piece_ids)
+                pass
             span = (span[0], span[3])
             instance = Instance(
                 piece_ids=piece_ids,
@@ -224,27 +226,9 @@ class MAVENPreprocess(object):
                 t = _token_span(offsets, ts, te)
                 _spans = [h[0] + 1, h[1] + 1, t[0] + 1, t[1] + 1]
         elif isinstance(token_ids, List):
+            # Token hóa danh sách các từ gốc (token_ids), đồng thời yêu cầu trả về offset mapping
+            tokens = tokenizer(token_ids, is_split_into_words=True, return_offsets_mapping=True, padding=True, truncation=True)
             if is_tokenized:
-                # tokens = tokenizer(token_ids, is_pretokenized=True, return_offsets_mapping=True)
-                # tokens = tokenizer(token_ids, return_offsets_mapping=True)
-                # if isinstance(token_ids[0], str):
-                #     _token_ids = tokens["input_ids"]
-                #     offsets = tokens["offset_mapping"]
-                #     token2piece = []
-                #     piece_idx = 1
-                #     for x, y in offsets[1:-1]:
-                #         if x == 0:
-                #             if len(token2piece) > 0:
-                #                 token2piece[-1].append(piece_idx-1)
-                #             token2piece.append([piece_idx])
-                #         piece_idx += 1
-                #     if len(token2piece[-1]) == 1:
-                #         token2piece[-1].append(piece_idx-1)
-                #     _spans = [token2piece[hs][0], token2piece[he][1], token2piece[ts][0], token2piece[te][1]]
-                
-                # Token hóa danh sách các từ gốc (token_ids), đồng thời yêu cầu trả về offset mapping
-                tokens = tokenizer(token_ids, is_split_into_words=True, return_offsets_mapping=True)
-
                 # Nếu token_ids là danh sách các từ gốc, ví dụ: ["This", "is", "a", "test"]
                 if isinstance(token_ids[0], str):
                     # _token_ids là danh sách ID sau khi tokenizer chuyển từ các từ sang subword tokens
@@ -263,7 +247,6 @@ class MAVENPreprocess(object):
                     piece_idx = 1
 
                     # Bỏ [CLS] và [SEP] → offsets[1:-1]
-
                     for x, y in offsets[1:-1]:
                         # Nếu subword bắt đầu từ đầu một từ (start_char == 0)
                         if x == 0:
@@ -309,7 +292,7 @@ class MAVENPreprocess(object):
                         else:
                             _token_ids.extend(t)
             else:
-                tokens = tokenizer(token_ids, return_offsets_mapping=True)
+                tokens = tokenizer(token_ids, return_offsets_mapping=True, padding=True, truncation=True)
                 if isinstance(token_ids[0], str):
                     offsets = tokens["offset_mapping"][sent_id][1:-1]
                     h = _token_span(offsets, hs, he)
