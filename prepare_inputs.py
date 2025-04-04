@@ -107,6 +107,13 @@ class MAVENPreprocess(object):
             outputs = self.model(input_ids=sentences.to(torch.device("cuda")), attention_mask=masks.to(torch.device("cuda")))
             for i, (s_id, s_l) in enumerate(zip(sentence_ids, length)):
                 feature_path = os.path.join(self.feature_root, s_id)
+                if not os.path.exists(f"{feature_path}.npy"):
+                    os.makedirs(os.path.dirname(feature_path), exist_ok=True)
+                    feature_path = f"{feature_path}.npy"
+                    if os.path.exists(feature_path):
+                        print("exist", feature_path)
+                        continue
+                    
                 features = outputs[0][i, :s_l, :]
                 features = features.cpu().numpy()
                 np.save(file=feature_path, arr=features)
@@ -240,7 +247,6 @@ class MAVENPreprocess(object):
 
                 # Nếu token_ids là danh sách các từ gốc, ví dụ: ["This", "is", "a", "test"]
                 if isinstance(token_ids[0], str):
-                    print("token_ids", token_ids)
                     # _token_ids là danh sách ID sau khi tokenizer chuyển từ các từ sang subword tokens
                     # Ví dụ: [101, 2023, 2003, 1037, 3231, 102]
                     _token_ids = tokens["input_ids"]  # List[int], chiều dài thường > len(token_ids)
