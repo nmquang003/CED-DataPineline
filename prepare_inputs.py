@@ -219,21 +219,67 @@ class MAVENPreprocess(object):
         elif isinstance(token_ids, List):
             if is_tokenized:
                 # tokens = tokenizer(token_ids, is_pretokenized=True, return_offsets_mapping=True)
+                # tokens = tokenizer(token_ids, return_offsets_mapping=True)
+                # if isinstance(token_ids[0], str):
+                #     _token_ids = tokens["input_ids"]
+                #     offsets = tokens["offset_mapping"]
+                #     token2piece = []
+                #     piece_idx = 1
+                #     for x, y in offsets[1:-1]:
+                #         if x == 0:
+                #             if len(token2piece) > 0:
+                #                 token2piece[-1].append(piece_idx-1)
+                #             token2piece.append([piece_idx])
+                #         piece_idx += 1
+                #     if len(token2piece[-1]) == 1:
+                #         token2piece[-1].append(piece_idx-1)
+                #     _spans = [token2piece[hs][0], token2piece[he][1], token2piece[ts][0], token2piece[te][1]]
+                
+                # Token hóa danh sách các từ gốc (token_ids), đồng thời yêu cầu trả về offset mapping
                 tokens = tokenizer(token_ids, return_offsets_mapping=True)
+
+                # Nếu token_ids là danh sách các từ gốc, ví dụ: ["This", "is", "a", "test"]
                 if isinstance(token_ids[0], str):
-                    _token_ids = tokens["input_ids"]
-                    offsets = tokens["offset_mapping"]
-                    token2piece = []
+                    # _token_ids là danh sách ID sau khi tokenizer chuyển từ các từ sang subword tokens
+                    # Ví dụ: [101, 2023, 2003, 1037, 3231, 102]
+                    _token_ids = tokens["input_ids"]  # List[int], chiều dài thường > len(token_ids)
+
+                    # offset mapping chứa các tuple (start_char, end_char) biểu diễn vị trí ký tự
+                    # của mỗi subword token trong câu gốc
+                    # Ví dụ: [(0,0), (0,4), (5,7), (8,9), (10,14), (0,0)]
+                    offsets = tokens["offset_mapping"]  # List[Tuple[int, int]], cùng chiều với _token_ids
+
+                    # token2piece sẽ ánh xạ từng token gốc sang các subword token tương ứng
+                    token2piece = []  # List[List[int]]
+
+                    # piece_idx: chỉ số của subword token (bỏ qua [CLS] ở đầu → bắt đầu từ 1)
                     piece_idx = 1
+
+                    # Bỏ [CLS] và [SEP] → offsets[1:-1]
                     for x, y in offsets[1:-1]:
+                        # Nếu subword bắt đầu từ đầu một từ (start_char == 0)
                         if x == 0:
+                            # Nếu đã có token trước đó → kết thúc token trước bằng index trước đó
                             if len(token2piece) > 0:
-                                token2piece[-1].append(piece_idx-1)
+                                token2piece[-1].append(piece_idx - 1)
+                            # Bắt đầu một token mới
                             token2piece.append([piece_idx])
+                        # Tăng chỉ số subword lên
                         piece_idx += 1
+
+                    # Kết thúc token cuối cùng: nếu nó chỉ có 1 phần tử → thêm phần tử kết thúc
                     if len(token2piece[-1]) == 1:
-                        token2piece[-1].append(piece_idx-1)
-                    _spans = [token2piece[hs][0], token2piece[he][1], token2piece[ts][0], token2piece[te][1]]
+                        token2piece[-1].append(piece_idx - 1)
+
+                    # Sau khi ánh xạ xong, có thể dùng token2piece để lấy lại vị trí của các từ trong chuỗi subword
+                    # _spans lấy các chỉ số start và end trong subword token space cho các từ ở các vị trí hs, he, ts, te
+                    _spans = [
+                        token2piece[hs][0],  # start của head entity
+                        token2piece[he][1],  # end của head entity
+                        token2piece[ts][0],  # start của tail entity
+                        token2piece[te][1],  # end của tail entity
+                    ]
+
                 else:
                     token2piece = []
                     piece_idx = 1
